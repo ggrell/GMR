@@ -20,6 +20,7 @@ jar {
 	baseName = 'gmr'
 	version = '0.0.1-SNAPSHOT'
 }
+
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
@@ -31,12 +32,26 @@ repositories {
 
 
 dependencies {
-	compile('org.springframework.boot:spring-boot-starter-jersey')
+	compile('commons-codec:commons-codec:1.10')
+//	compile('org.springframework.boot:spring-boot-starter-jersey')
 //	compile('org.springframework.boot:spring-boot-starter-security')
-	compile('org.springframework.boot:spring-boot-starter-web-services')
+//	compile('org.springframework.boot:spring-boot-starter-web-services')
 	testCompile('org.springframework.boot:spring-boot-starter-test') 
 }
 
+ext {
+	commit = 'git rev-parse --short HEAD'.execute().text.trim()
+	branch = 'git rev-parse --abbrev-ref --symbolic HEAD'.execute().text.trim()
+}
+
+processResources {
+	expand(
+			timestamp: new Date(),
+			commit: commit,
+			branch: branch,
+			version: project.version
+	)
+}
 
 eclipse {
 	classpath {
