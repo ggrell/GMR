@@ -63,3 +63,7 @@ processResources {
 			version: project.version
 	)
 }
+
+springBoot {
+    mainClass = "com.gyurigrell.gmr.GmrApplication"
+}
