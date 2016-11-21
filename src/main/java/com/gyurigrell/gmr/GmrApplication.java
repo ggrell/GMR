@@ -1,79 +1,47 @@
 package com.gyurigrell.gmr;
 
-import org.apache.commons.codec.digest.HmacUtils;
-import org.springframework.beans.factory.annotation.Value;
+import com.ociweb.iot.maker.*;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseBody;
 
-import java.security.MessageDigest;
-import java.util.Objects;
+import static com.ociweb.iot.grove.GroveTwig.LED;
+import static com.ociweb.iot.maker.Port.D4;
 
 @SpringBootApplication
 public class GmrApplication {
-	public static void main(String[] args) {
-		SpringApplication.run(GmrApplication.class, args);
-	}
+    private static final String TOPIC = "light";
+    private static final int PAUSE = 500;
+    public static final Port LED_PORT = D4;
 
-	private static final String EOL = "\n";
-	private static final int SIGNATURE_LENGTH = 45;
-	private final String secret;
+    public static void main(String[] args) {
+        SpringApplication.run(GmrApplication.class, args);
+        DeviceRuntime.run(new IoTSetup() {
+            @Override
+            public void declareConnections(Hardware hardware) {
+                hardware.connect(LED, LED_PORT);
+            }
 
-	@Value("${build.version}")
-	private String version;
+            @Override
+            public void declareBehavior(DeviceRuntime runtime) {
+                final CommandChannel blinkerChannel = runtime.newCommandChannel();
+                runtime.addPubSubListener((topic, payload) -> {
 
-	@Value("${build.commit}")
-	private String commitId;
+                    boolean value = payload.readBoolean();
+                    blinkerChannel.setValueAndBlock(LED_PORT, value ? 1 : 0, PAUSE);
+                    PayloadWriter writer = blinkerChannel.openTopic(TOPIC);
+                    writer.writeBoolean(!value);
+                    writer.publish();
 
-	public GmrApplication() {
-		this(System.getenv("SECRET_KEY"));
-	}
+                }).addSubscription(TOPIC);
 
-	public GmrApplication(String secret) {
-//		Objects.requireNonNull(secret, "No secret given.");
-		this.secret = secret;
-	}
-
-	@RequestMapping("/")
-	@ResponseBody
-	public String home() {
-		return "up and running!\n";
-	}
-
-    @RequestMapping(value = "/github-webhook", method = RequestMethod.POST)
-    public ResponseEntity<String> handle(@RequestHeader("X-Hub-Signature") String signature,
-                                         @RequestBody String payload) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("X-Webhook-Version", String.format("%s/%s", version, commitId));
-
-        if (signature == null) {
-            return new ResponseEntity<>("No signature given." + EOL, headers,
-                    HttpStatus.BAD_REQUEST);
-        }
-
-        String computed = String.format("sha1=%s", HmacUtils.hmacSha1Hex(secret, payload));
-        boolean invalidLength = signature.length() != SIGNATURE_LENGTH;
-
-        if (invalidLength || !constantTimeCompare(signature, computed)) {
-            return new ResponseEntity<>("Invalid signature." + EOL, headers,
-                    HttpStatus.UNAUTHORIZED);
-        }
-
-        int bytes = payload.getBytes().length;
-        StringBuilder message = new StringBuilder();
-        message.append("Signature OK.").append(EOL);
-        message.append(String.format("Received %d bytes.", bytes)).append(EOL);
-        return new ResponseEntity<>(message.toString(), headers, HttpStatus.OK);
-    }
-
-    public static boolean constantTimeCompare(String a, String b) {
-        return MessageDigest.isEqual(a.getBytes(), b.getBytes());
+                final CommandChannel startupChannel = runtime.newCommandChannel();
+                runtime.addStartupListener(
+                        () -> {
+                            PayloadWriter writer = startupChannel.openTopic(TOPIC);
+                            writer.writeBoolean(true);
+                            writer.publish();
+                        });
+            }
+        });
     }
 }

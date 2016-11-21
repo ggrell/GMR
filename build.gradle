@@ -1,42 +1,53 @@
 buildscript {
 	ext {
-		springBootVersion = '1.4.0.RC1'
+		springBootVersion = '1.4.2.RELEASE'
 	}
 	repositories {
-		mavenCentral()
-		maven { url "https://repo.spring.io/snapshot" }
-		maven { url "https://repo.spring.io/milestone" }
+		jcenter()
+//		mavenCentral()
 	}
 	dependencies {
-		classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}") 
+		classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
 	}
 }
 
 apply plugin: 'java'
 apply plugin: 'eclipse'
-apply plugin: 'spring-boot' 
+apply plugin: 'org.springframework.boot'
 
 jar {
 	baseName = 'gmr'
 	version = '0.0.1-SNAPSHOT'
 }
+version = jar.version
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 repositories {
-	mavenCentral()
-	maven { url "https://repo.spring.io/snapshot" }
-	maven { url "https://repo.spring.io/milestone" }
+	jcenter()
+    maven { url "https://repository-pronghorn.forge.cloudbees.com/release" }
+//	mavenCentral()
+//	maven { url "https://repo.spring.io/snapshot" }
+//	maven { url "https://repo.spring.io/milestone" }
 }
 
 
 dependencies {
+	compile files('libs/pi4j-core-0.0.5.jar')
+    compile ('org.springframework.boot:spring-boot-starter') {
+        exclude module : 'spring-boot-starter-logging'
+    }
+	compile('org.springframework.boot:spring-boot-starter-web') {
+        exclude module : 'spring-boot-starter-logging'
+    }
+    compile('org.springframework.boot:spring-boot-starter-log4j2')
 	compile('commons-codec:commons-codec:1.10')
-//	compile('org.springframework.boot:spring-boot-starter-jersey')
-//	compile('org.springframework.boot:spring-boot-starter-security')
-//	compile('org.springframework.boot:spring-boot-starter-web-services')
-	testCompile('org.springframework.boot:spring-boot-starter-test') 
+	compile('com.ociweb:PronghornIoT:0.0.9')
+//    compile('org.slf4j:slf4j-api:1.7.12')
+//    compile('org.slf4j:slf4j-simple:1.7.12')
+
+	testCompile('org.springframework.boot:spring-boot-starter-test')
 }
 
 ext {
@@ -51,11 +62,4 @@ processResources {
 			branch: branch,
 			version: project.version
 	)
-}
-
-eclipse {
-	classpath {
-		 containers.remove('org.eclipse.jdt.launching.JRE_CONTAINER')
-		 containers 'org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8'
-	}
 }
