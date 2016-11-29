@@ -2,16 +2,14 @@ package com.gyurigrell.gmr;
 
 import com.ociweb.iot.grove.Grove_LCD_RGB;
 import com.ociweb.iot.maker.*;
-import org.springframework.boot.SpringApplication;
+import com.ociweb.iot.maker.Port;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.builder.SpringApplicationBuilder;
 
 import java.util.logging.Logger;
 
-import static com.ociweb.iot.grove.GroveTwig.LED;
-import static com.ociweb.iot.grove.GroveTwig.Relay;
-import static com.ociweb.iot.maker.Port.D3;
-import static com.ociweb.iot.maker.Port.D4;
-import static com.ociweb.iot.maker.Port.D8;
+import static com.ociweb.iot.grove.GroveTwig.*;
+import static com.ociweb.iot.maker.Port.*;
 
 @SpringBootApplication
 public class GmrApplication {
@@ -22,17 +20,20 @@ public class GmrApplication {
     private static final Port RELAY_PORT = D3;
     private static final Port LED_PORT = D4;
     private static final Port LCD_PORT = D8;
+    private static final Port BUTTON_PORT = D8;
 
     //private static Grove_LCD_RGB rgbLcd;
 
     public static void main(String[] args) {
-        SpringApplication.run(GmrApplication.class, args);
+        new SpringApplicationBuilder(GmrApplication.class).logStartupInfo(false).run(args);
+//        SpringApplication.run(GmrApplication.class, args);
         DeviceRuntime.run(new IoTSetup() {
             @Override
             public void declareConnections(Hardware hardware) {
                 //rgbLcd = new Grove_LCD_RGB();
                 hardware.connect(LED, LED_PORT)
-                        .connect(Relay, RELAY_PORT);
+                        .connect(Relay, RELAY_PORT)
+                        .connect(Button, BUTTON_PORT);
             }
 
             @Override
@@ -59,9 +60,13 @@ public class GmrApplication {
                             break;
                     }
 
-                    Grove_LCD_RGB.commandForColor(lcdChannel, 255, 255, 200);
+                    Grove_LCD_RGB.commandForColor(lcdChannel, 200, 200, 200);
                     Grove_LCD_RGB.commandForText(lcdChannel, topic);
                 }).addSubscription(LIGHT_TOPIC);
+
+                runtime.addDigitalListener((connection, time, durationMillis, value) -> {
+                    Grove_LCD_RGB.commandForColor(lcdChannel, 255, 0, 0);
+                });
 
                 // Initialize the startup settings
                 final CommandChannel startupChannel = runtime.newCommandChannel();
