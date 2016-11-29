@@ -38,7 +38,7 @@ public class GmrApplication {
             @Override
             public void declareBehavior(DeviceRuntime runtime) {
                 final CommandChannel lcdChannel = runtime.newCommandChannel();
-                Grove_LCD_RGB.begin(lcdChannel);
+                //Grove_LCD_RGB.begin(lcdChannel);
 
                 // Timer callback
                 final CommandChannel blinkerChannel = runtime.newCommandChannel();
