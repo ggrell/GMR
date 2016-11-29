@@ -23,18 +23,16 @@ public class GmrApplication {
     private static final Port LED_PORT = D4;
     private static final Port LCD_PORT = D8;
 
-    private static Grove_LCD_RGB rgbLcd;
+    //private static Grove_LCD_RGB rgbLcd;
 
     public static void main(String[] args) {
         SpringApplication.run(GmrApplication.class, args);
         DeviceRuntime.run(new IoTSetup() {
             @Override
             public void declareConnections(Hardware hardware) {
-                rgbLcd = new Grove_LCD_RGB();
+                //rgbLcd = new Grove_LCD_RGB();
                 hardware.connect(LED, LED_PORT)
-                        .connect(Relay, RELAY_PORT)
-                        .useI2C()
-                        .connectI2C(rgbLcd);
+                        .connect(Relay, RELAY_PORT);
             }
 
             @Override
