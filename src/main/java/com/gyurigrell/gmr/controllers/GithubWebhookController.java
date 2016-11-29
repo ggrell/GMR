@@ -1,8 +1,6 @@
 package com.gyurigrell.gmr.controllers;
 
-import grovepi.GrovePi;
 import org.apache.commons.codec.digest.HmacUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,7 +21,7 @@ public class GithubWebhookController {
 
     private final String secret;
 
-    private final GrovePi grovePi;
+//    private final GrovePi grovePi;
 
     //	@Value("${build.version}")
     private String version;
@@ -31,14 +29,13 @@ public class GithubWebhookController {
     //	@Value("${build.commit}")
     private String commitId;
 
-    @Autowired
-    public GithubWebhookController(GrovePi grovePi) {
-        this(grovePi, System.getenv("SECRET_KEY"));
+    public GithubWebhookController() {
+        this(System.getenv("SECRET_KEY"));
     }
 
-    public GithubWebhookController(GrovePi grovePi, String secret) {
+    public GithubWebhookController(String secret) {
 //		Objects.requireNonNull(secret, "No secret given.");
-        this.grovePi = grovePi;
+//        this.grovePi = grovePi;
         this.secret = secret;
     }
 
