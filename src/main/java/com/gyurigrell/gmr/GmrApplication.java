@@ -64,8 +64,13 @@ public class GmrApplication {
                     Grove_LCD_RGB.commandForText(lcdChannel, topic);
                 }).addSubscription(LIGHT_TOPIC);
 
-                runtime.addDigitalListener((connection, time, durationMillis, value) -> {
+                runtime.addDigitalListener((port, time, durationMillis, value) -> {
+                    logger.info("DIGITAL> port: " + port + " time: " + time + " dur: " + durationMillis + " val: " + value);
                     Grove_LCD_RGB.commandForColor(lcdChannel, 255, 0, 0);
+                });
+
+                runtime.addAnalogListener((port, time, durationMillis, average, value) -> {
+                    logger.info("ANALOG> port: " + port + " time: " + time + " dur: " + durationMillis + " val: " + value);
                 });
 
                 // Initialize the startup settings
