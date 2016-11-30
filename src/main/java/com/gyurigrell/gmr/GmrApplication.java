@@ -21,27 +21,30 @@ public class GmrApplication {
     private static final Port LED_PORT = D4;
     private static final Port BUTTON_PORT = D8;
     private static final Port ANGLE_SENSOR_PORT = A1;
+    private static final int MAX_ANGLE_VALUE = 1024;
+    private static int angleValue = MAX_ANGLE_VALUE;
+    private static CommandChannel lcdChannel;
 
     public static void main(String[] args) {
         new SpringApplicationBuilder(GmrApplication.class).logStartupInfo(false).run(args);
+
         DeviceRuntime.run(new IoTSetup() {
             @Override
             public void declareConnections(Hardware hardware) {
                 hardware.connect(LED, LED_PORT)
                         .connect(Relay, RELAY_PORT)
                         .connect(Button, BUTTON_PORT)
-                        .connect(AngleSensor, ANGLE_SENSOR_PORT)
-                        .connect(Button, A2);
+                        .connect(AngleSensor, ANGLE_SENSOR_PORT);
             }
 
             @Override
             public void declareBehavior(DeviceRuntime runtime) {
-                final CommandChannel lcdChannel = runtime.newCommandChannel();
+                lcdChannel = runtime.newCommandChannel();
                 final CommandChannel blinkerChannel = runtime.newCommandChannel();
                 final CommandChannel startupChannel = runtime.newCommandChannel();
 
                 runtime.addPubSubListener((topic, payload) -> {
-                    logger.info("topic: " + topic);
+                    logger.info("PubSub> topic: " + topic);
                     switch (topic.toString()) {
                         case LIGHT_TOPIC:
                             boolean value = payload.readBoolean();
@@ -65,18 +68,25 @@ public class GmrApplication {
                     if (value > 0) {
                         Grove_LCD_RGB.commandForColor(lcdChannel, 255, 0, 0);
                     } else {
-                        Grove_LCD_RGB.commandForColor(lcdChannel, 128, 128, 128);
+                        updateLCDColor();
                     }
                 });
 
                 runtime.addAnalogListener((port, time, durationMillis, average, value) -> {
                     logger.info("ANALOG> port: " + port + " time: " + time + " dur: " + durationMillis + " val: " + value);
+                    switch (port) {
+                        case A1:
+                            angleValue = value;
+                            updateLCDColor();
+                            break;
+                    }
                 });
 
                 // Initialize the startup settings
                 runtime.addStartupListener(
                         () -> {
-                            Grove_LCD_RGB.commandForColor(lcdChannel, 200, 200, 200);
+                            logger.info("DeviceRuntime> startup");
+                            updateLCDColor();
 
                             PayloadWriter writer = startupChannel.openTopic(LIGHT_TOPIC);
                             writer.writeBoolean(true);
@@ -84,5 +94,12 @@ public class GmrApplication {
                         });
             }
         });
+    }
+
+    private static void updateLCDColor() {
+        if (lcdChannel != null) {
+            int color = (int) ((float) angleValue / (float) MAX_ANGLE_VALUE * 256.0f);
+            Grove_LCD_RGB.commandForColor(lcdChannel, color, color, color);
+        }
     }
 }
