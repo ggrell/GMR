@@ -37,8 +37,6 @@ public class GmrApplication {
             @Override
             public void declareBehavior(DeviceRuntime runtime) {
                 final CommandChannel lcdChannel = runtime.newCommandChannel();
-                Grove_LCD_RGB.commandForColor(lcdChannel, 200, 200, 200);
-
                 final CommandChannel blinkerChannel = runtime.newCommandChannel();
                 final CommandChannel startupChannel = runtime.newCommandChannel();
 
@@ -78,6 +76,8 @@ public class GmrApplication {
                 // Initialize the startup settings
                 runtime.addStartupListener(
                         () -> {
+                            Grove_LCD_RGB.commandForColor(lcdChannel, 200, 200, 200);
+
                             PayloadWriter writer = startupChannel.openTopic(LIGHT_TOPIC);
                             writer.writeBoolean(true);
                             writer.publish();
