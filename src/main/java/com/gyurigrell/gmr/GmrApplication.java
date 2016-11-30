@@ -19,30 +19,29 @@ public class GmrApplication {
     private static final int BLINK_DELAY_MS = 1000;
     private static final Port RELAY_PORT = D3;
     private static final Port LED_PORT = D4;
-    private static final Port LCD_PORT = D8;
     private static final Port BUTTON_PORT = D8;
-
-    //private static Grove_LCD_RGB rgbLcd;
+    private static final Port ANGLE_SENSOR_PORT = A1;
 
     public static void main(String[] args) {
         new SpringApplicationBuilder(GmrApplication.class).logStartupInfo(false).run(args);
-//        SpringApplication.run(GmrApplication.class, args);
         DeviceRuntime.run(new IoTSetup() {
             @Override
             public void declareConnections(Hardware hardware) {
-                //rgbLcd = new Grove_LCD_RGB();
                 hardware.connect(LED, LED_PORT)
                         .connect(Relay, RELAY_PORT)
-                        .connect(Button, BUTTON_PORT);
+                        .connect(Button, BUTTON_PORT)
+                        .connect(AngleSensor, ANGLE_SENSOR_PORT)
+                        .connect(Button, A2);
             }
 
             @Override
             public void declareBehavior(DeviceRuntime runtime) {
                 final CommandChannel lcdChannel = runtime.newCommandChannel();
-                //Grove_LCD_RGB.begin(lcdChannel);
+                Grove_LCD_RGB.commandForColor(lcdChannel, 200, 200, 200);
 
-                // Timer callback
                 final CommandChannel blinkerChannel = runtime.newCommandChannel();
+                final CommandChannel startupChannel = runtime.newCommandChannel();
+
                 runtime.addPubSubListener((topic, payload) -> {
                     logger.info("topic: " + topic);
                     switch (topic.toString()) {
@@ -60,13 +59,16 @@ public class GmrApplication {
                             break;
                     }
 
-                    Grove_LCD_RGB.commandForColor(lcdChannel, 200, 200, 200);
                     Grove_LCD_RGB.commandForText(lcdChannel, topic);
                 }).addSubscription(LIGHT_TOPIC);
 
                 runtime.addDigitalListener((port, time, durationMillis, value) -> {
                     logger.info("DIGITAL> port: " + port + " time: " + time + " dur: " + durationMillis + " val: " + value);
-                    Grove_LCD_RGB.commandForColor(lcdChannel, 255, 0, 0);
+                    if (value > 0) {
+                        Grove_LCD_RGB.commandForColor(lcdChannel, 255, 0, 0);
+                    } else {
+                        Grove_LCD_RGB.commandForColor(lcdChannel, 128, 128, 128);
+                    }
                 });
 
                 runtime.addAnalogListener((port, time, durationMillis, average, value) -> {
@@ -74,7 +76,6 @@ public class GmrApplication {
                 });
 
                 // Initialize the startup settings
-                final CommandChannel startupChannel = runtime.newCommandChannel();
                 runtime.addStartupListener(
                         () -> {
                             PayloadWriter writer = startupChannel.openTopic(LIGHT_TOPIC);
