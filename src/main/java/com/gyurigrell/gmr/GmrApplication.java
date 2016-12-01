@@ -57,7 +57,9 @@ public class GmrApplication {
                             break;
 
                         case PR_OPENED_TOPIC:
+                            logger.info("PR opened, starting lift");
                             relayChannel.setValue(RELAY_PORT, 1);
+                            Grove_LCD_RGB.commandForTextAndColor(lcdChannel, "PR for toolkit-android", 128, 128, 0);
                             break;
                     }
                 }).addSubscription(LIGHT_TOPIC).addSubscription(PR_OPENED_TOPIC);
@@ -65,13 +67,12 @@ public class GmrApplication {
                 runtime.addDigitalListener((port, time, durationMillis, value) -> {
                     logger.info("DIGITAL> port: " + port + " time: " + time + " dur: " + durationMillis + " val: " + value);
                     if (port == TOP_BUTTON1_PORT) {
-                        logger.info("Ball reached ");
+                        logger.info("Ball reached the top, stopping lift");
                         relayChannel.setValue(RELAY_PORT, 0);
-                        Grove_LCD_RGB.commandForColor(lcdChannel, 0, 255, 0);
-                        Grove_LCD_RGB.commandForTextAndColor(lcdChannel, "Building toolkit-android", 0, 255, 255);
                     } else if (port == BOTTOM_BUTTON1_PORT) {
                         // TODO call through to Jenkins to start build
-                        logger.info("Calling Jenkins to start build");
+                        logger.info("Ball reached the bottom, salling Jenkins to start build");
+                        Grove_LCD_RGB.commandForTextAndColor(lcdChannel, "Building toolkit-android", 255, 255, 0);
                     }
                 });
 
