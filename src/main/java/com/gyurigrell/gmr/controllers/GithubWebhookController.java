@@ -68,12 +68,6 @@ public class GithubWebhookController {
 //                    HttpStatus.UNAUTHORIZED);
 //        }
 
-        //final CommandChannel channel = runtime.newCommandChannel(); // Doesn't work
-//        final CommandChannel channel = GmrIoTSetup.theStartupChannel;
-//        PayloadWriter writer = channel.openTopic("pr_opened");
-//        writer.writeBoolean(true);
-//        writer.publish();
-
         eventBus.notify("pr");
 
         int bytes = payload.getBytes().length;

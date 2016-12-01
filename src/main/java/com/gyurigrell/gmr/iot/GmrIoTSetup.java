@@ -21,7 +21,7 @@ public class GmrIoTSetup implements IoTSetup {
     private static final String PR_OPENED_TOPIC = "pr_opened";
 
     private static final int BLINK_DELAY_MS = 1000;
-    private static final Port RELAY_PORT = D3;
+    private static final Port RELAY_PORT = D2;
     private static final Port LED_PORT = D4;
     private static final Port TOP_BUTTON1_PORT = D5;
     private static final Port BOTTOM_BUTTON1_PORT = D8;
@@ -42,14 +42,12 @@ public class GmrIoTSetup implements IoTSetup {
 
     @Override
     public void declareBehavior(DeviceRuntime runtime) {
-        final CommandChannel lcdChannel = runtime.newCommandChannel();
-        final CommandChannel relayChannel = runtime.newCommandChannel();
-        final CommandChannel blinkerChannel = runtime.newCommandChannel();
-        final CommandChannel startupChannel = runtime.newCommandChannel();
 
+        // Handles the LED blink topic
+        final CommandChannel blinkerChannel = runtime.newCommandChannel();
         runtime.addPubSubListener((topic, payload) -> {
-            logger.info("Blink LED");
             boolean value = payload.readBoolean();
+            logger.info("LED " + (value ? "on" : "off"));
             blinkerChannel.setValueAndBlock(LED_PORT, value ? 1 : 0, BLINK_DELAY_MS);
 
             PayloadWriter writer = blinkerChannel.openTopic(LIGHT_TOPIC);
@@ -57,12 +55,17 @@ public class GmrIoTSetup implements IoTSetup {
             writer.publish();
         }).addSubscription(LIGHT_TOPIC);
 
+        final CommandChannel lcdChannel = runtime.newCommandChannel();
+        final CommandChannel relayChannel = runtime.newCommandChannel();
+
+        // Handles the PR topic
         runtime.addPubSubListener((topic, payload) -> {
             logger.info("PR opened, starting lift");
             relayChannel.setValue(RELAY_PORT, 1);
             Grove_LCD_RGB.commandForTextAndColor(lcdChannel, "New PR\ntoolkit-android", 128, 128, 128);
         }).addSubscription(PR_OPENED_TOPIC);
 
+        // Handles the digital port changes
         runtime.addDigitalListener((port, time, durationMillis, value) -> {
 //            logger.info("DIGITAL> port: " + port + " time: " + time + " dur: " + durationMillis + " val: " + value);
             if (port == TOP_BUTTON1_PORT) {
@@ -76,12 +79,15 @@ public class GmrIoTSetup implements IoTSetup {
         });
 
         // Initialize the startup settings
+        final CommandChannel startupChannel = runtime.newCommandChannel();
         runtime.addStartupListener(() -> {
             logger.info("Device Runtime startup");
 
             PayloadWriter writer = startupChannel.openTopic(LIGHT_TOPIC);
             writer.writeBoolean(true);
             writer.publish();
+
+            Grove_LCD_RGB.clearDisplay(lcdChannel);
 
             eventBus.on($("pr"), event -> startupChannel.openTopic(PR_OPENED_TOPIC).publish());
         });
