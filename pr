@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+curl -X POST -H "X-Hub-Signature:sig" -d "{}"  http://127.0.0.1:8080/github-webhook

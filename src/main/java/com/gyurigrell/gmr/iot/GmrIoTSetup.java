@@ -49,39 +49,39 @@ public class GmrIoTSetup implements IoTSetup {
 
         runtime.addPubSubListener((topic, payload) -> {
             logger.info("Blink LED");
-//            boolean value = payload.readBoolean();
-//            blinkerChannel.setValueAndBlock(LED_PORT, value ? 1 : 0, BLINK_DELAY_MS);
-//
-//            PayloadWriter writer = blinkerChannel.openTopic(LIGHT_TOPIC);
-//            writer.writeBoolean(!value);
-//            writer.publish();
+            boolean value = payload.readBoolean();
+            blinkerChannel.setValueAndBlock(LED_PORT, value ? 1 : 0, BLINK_DELAY_MS);
+
+            PayloadWriter writer = blinkerChannel.openTopic(LIGHT_TOPIC);
+            writer.writeBoolean(!value);
+            writer.publish();
         }).addSubscription(LIGHT_TOPIC);
 
         runtime.addPubSubListener((topic, payload) -> {
             logger.info("PR opened, starting lift");
             relayChannel.setValue(RELAY_PORT, 1);
-            Grove_LCD_RGB.commandForTextAndColor(lcdChannel, "PR for toolkit-android", 128, 128, 128);
+            Grove_LCD_RGB.commandForTextAndColor(lcdChannel, "New PR\ntoolkit-android", 128, 128, 128);
         }).addSubscription(PR_OPENED_TOPIC);
 
         runtime.addDigitalListener((port, time, durationMillis, value) -> {
-            logger.info("DIGITAL> port: " + port + " time: " + time + " dur: " + durationMillis + " val: " + value);
+//            logger.info("DIGITAL> port: " + port + " time: " + time + " dur: " + durationMillis + " val: " + value);
             if (port == TOP_BUTTON1_PORT) {
                 logger.info("Ball reached the top of track, stopping lift");
                 relayChannel.setValue(RELAY_PORT, 0);
             } else if (port == BOTTOM_BUTTON1_PORT) {
                 // TODO call through to Jenkins to start build
                 logger.info("Ball reached the bottom, calling Jenkins to start build");
-                Grove_LCD_RGB.commandForTextAndColor(lcdChannel, "Building toolkit-android", 255, 255, 255);
+                Grove_LCD_RGB.commandForTextAndColor(lcdChannel, "Building\ntoolkit-android", 255, 255, 255);
             }
         });
 
         // Initialize the startup settings
         runtime.addStartupListener(() -> {
-            logger.info("DeviceRuntime> startup");
+            logger.info("Device Runtime startup");
 
-//            PayloadWriter writer = startupChannel.openTopic(LIGHT_TOPIC);
-//            writer.writeBoolean(true);
-//            writer.publish();
+            PayloadWriter writer = startupChannel.openTopic(LIGHT_TOPIC);
+            writer.writeBoolean(true);
+            writer.publish();
 
             eventBus.on($("pr"), event -> startupChannel.openTopic(PR_OPENED_TOPIC).publish());
         });
