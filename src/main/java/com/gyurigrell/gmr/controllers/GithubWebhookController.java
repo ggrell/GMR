@@ -1,6 +1,6 @@
 package com.gyurigrell.gmr.controllers;
 
-import org.apache.commons.codec.digest.HmacUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -8,6 +8,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
+import reactor.bus.EventBus;
 
 import java.security.MessageDigest;
 
@@ -28,6 +29,15 @@ public class GithubWebhookController {
 
     //	@Value("${build.commit}")
     private String commitId;
+
+//    @Autowired
+//    private DeviceRuntime runtime;
+//
+//    @Autowired
+//    private HardwareConfiguration config;
+
+    @Autowired
+    private EventBus eventBus;
 
     public GithubWebhookController() {
         this(System.getenv("SECRET_KEY"));
@@ -50,15 +60,21 @@ public class GithubWebhookController {
                     HttpStatus.BAD_REQUEST);
         }
 
-        String computed = String.format("sha1=%s", HmacUtils.hmacSha1Hex(secret, payload));
-        boolean invalidLength = signature.length() != SIGNATURE_LENGTH;
+//        String computed = String.format("sha1=%s", HmacUtils.hmacSha1Hex(secret, payload));
+//        boolean invalidLength = signature.length() != SIGNATURE_LENGTH;
+//
+//        if (invalidLength || !constantTimeCompare(signature, computed)) {
+//            return new ResponseEntity<>("Invalid signature." + EOL, headers,
+//                    HttpStatus.UNAUTHORIZED);
+//        }
 
-        if (invalidLength || !constantTimeCompare(signature, computed)) {
-            return new ResponseEntity<>("Invalid signature." + EOL, headers,
-                    HttpStatus.UNAUTHORIZED);
-        }
+        //final CommandChannel channel = runtime.newCommandChannel(); // Doesn't work
+//        final CommandChannel channel = GmrIoTSetup.theStartupChannel;
+//        PayloadWriter writer = channel.openTopic("pr_opened");
+//        writer.writeBoolean(true);
+//        writer.publish();
 
-
+        eventBus.notify("pr");
 
         int bytes = payload.getBytes().length;
         StringBuilder message = new StringBuilder();
