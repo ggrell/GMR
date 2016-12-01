@@ -16,14 +16,14 @@ public class GmrApplication {
     private static Logger logger = Logger.getLogger("GmrApplication");
 
     private static final String LIGHT_TOPIC = "light";
+
+    private static final String PR_OPENED_TOPIC = "pr_opened";
+
     private static final int BLINK_DELAY_MS = 1000;
     private static final Port RELAY_PORT = D3;
     private static final Port LED_PORT = D4;
-    private static final Port BUTTON_PORT = D8;
-    private static final Port ANGLE_SENSOR_PORT = A1;
-    private static final int MAX_ANGLE_VALUE = 1024;
-    private static int angleValue = MAX_ANGLE_VALUE;
-    private static CommandChannel lcdChannel;
+    private static final Port TOP_BUTTON1_PORT = D5;
+    private static final Port BOTTOM_BUTTON1_PORT = D8;
 
     public static void main(String[] args) {
         new SpringApplicationBuilder(GmrApplication.class).logStartupInfo(false).run(args);
@@ -33,13 +33,14 @@ public class GmrApplication {
             public void declareConnections(Hardware hardware) {
                 hardware.connect(LED, LED_PORT)
                         .connect(Relay, RELAY_PORT)
-                        .connect(Button, BUTTON_PORT)
-                        .connect(AngleSensor, ANGLE_SENSOR_PORT);
+                        .connect(Button, BOTTOM_BUTTON1_PORT)
+                        .connect(Button, TOP_BUTTON1_PORT);
             }
 
             @Override
             public void declareBehavior(DeviceRuntime runtime) {
-                lcdChannel = runtime.newCommandChannel();
+                final CommandChannel lcdChannel = runtime.newCommandChannel();
+                final CommandChannel relayChannel = runtime.newCommandChannel();
                 final CommandChannel blinkerChannel = runtime.newCommandChannel();
                 final CommandChannel startupChannel = runtime.newCommandChannel();
 
@@ -55,30 +56,22 @@ public class GmrApplication {
                             writer.publish();
                             break;
 
-                        default:
-
+                        case PR_OPENED_TOPIC:
+                            relayChannel.setValue(RELAY_PORT, 1);
                             break;
                     }
-
-                    Grove_LCD_RGB.commandForText(lcdChannel, topic);
-                }).addSubscription(LIGHT_TOPIC);
+                }).addSubscription(LIGHT_TOPIC).addSubscription(PR_OPENED_TOPIC);
 
                 runtime.addDigitalListener((port, time, durationMillis, value) -> {
                     logger.info("DIGITAL> port: " + port + " time: " + time + " dur: " + durationMillis + " val: " + value);
-                    if (value > 0) {
-                        Grove_LCD_RGB.commandForColor(lcdChannel, 255, 0, 0);
-                    } else {
-                        updateLCDColor();
-                    }
-                });
-
-                runtime.addAnalogListener((port, time, durationMillis, average, value) -> {
-                    logger.info("ANALOG> port: " + port + " time: " + time + " dur: " + durationMillis + " val: " + value);
-                    switch (port) {
-                        case A1:
-                            angleValue = value;
-                            updateLCDColor();
-                            break;
+                    if (port == TOP_BUTTON1_PORT) {
+                        logger.info("Ball reached ");
+                        relayChannel.setValue(RELAY_PORT, 0);
+                        Grove_LCD_RGB.commandForColor(lcdChannel, 0, 255, 0);
+                        Grove_LCD_RGB.commandForTextAndColor(lcdChannel, "Building toolkit-android", 0, 255, 255);
+                    } else if (port == BOTTOM_BUTTON1_PORT) {
+                        // TODO call through to Jenkins to start build
+                        logger.info("Calling Jenkins to start build");
                     }
                 });
 
@@ -86,20 +79,16 @@ public class GmrApplication {
                 runtime.addStartupListener(
                         () -> {
                             logger.info("DeviceRuntime> startup");
-                            updateLCDColor();
 
                             PayloadWriter writer = startupChannel.openTopic(LIGHT_TOPIC);
                             writer.writeBoolean(true);
                             writer.publish();
+
+                            PayloadWriter writer1 = startupChannel.openTopic(PR_OPENED_TOPIC);
+                            writer1.writeBoolean(true);
+                            writer1.publish();
                         });
             }
         });
-    }
-
-    private static void updateLCDColor() {
-        if (lcdChannel != null) {
-            int color = (int) ((float) angleValue / (float) MAX_ANGLE_VALUE * 256.0f);
-            Grove_LCD_RGB.commandForColor(lcdChannel, color, color, color);
-        }
     }
 }
