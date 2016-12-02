@@ -60,8 +60,8 @@ public class GmrIoTSetup implements IoTSetup {
 
         // Handles the PR topic
         runtime.addPubSubListener((topic, payload) -> {
-            logger.info("PR opened, starting lift");
-            relayChannel.setValue(RELAY_PORT, 1);
+            boolean value = relayChannel.setValue(RELAY_PORT, 1);
+            logger.info("PR opened, starting lift. Relay: " + value);
             Grove_LCD_RGB.commandForTextAndColor(lcdChannel, "New PR\ntoolkit-android", 128, 128, 128);
         }).addSubscription(PR_OPENED_TOPIC);
 
@@ -69,8 +69,8 @@ public class GmrIoTSetup implements IoTSetup {
         runtime.addDigitalListener((port, time, durationMillis, value) -> {
 //            logger.info("DIGITAL> port: " + port + " time: " + time + " dur: " + durationMillis + " val: " + value);
             if (port == TOP_BUTTON1_PORT) {
-                logger.info("Ball reached the top of track, stopping lift");
-                relayChannel.setValue(RELAY_PORT, 0);
+                boolean relayValue = relayChannel.setValue(RELAY_PORT, 0);
+                logger.info("Ball reached the top of track, stopping lift. Relay: " + relayValue);
             } else if (port == BOTTOM_BUTTON1_PORT) {
                 // TODO call through to Jenkins to start build
                 logger.info("Ball reached the bottom, calling Jenkins to start build");

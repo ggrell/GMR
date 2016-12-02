@@ -22,19 +22,11 @@ public class GithubWebhookController {
 
     private final String secret;
 
-//    private final GrovePi grovePi;
-
     //	@Value("${build.version}")
     private String version;
 
     //	@Value("${build.commit}")
     private String commitId;
-
-//    @Autowired
-//    private DeviceRuntime runtime;
-//
-//    @Autowired
-//    private HardwareConfiguration config;
 
     @Autowired
     private EventBus eventBus;
@@ -45,7 +37,6 @@ public class GithubWebhookController {
 
     public GithubWebhookController(String secret) {
 //		Objects.requireNonNull(secret, "No secret given.");
-//        this.grovePi = grovePi;
         this.secret = secret;
     }
 
